@@ -23,94 +23,33 @@ provider "aws" {
 variable "input_hosted_zone_id" {
   description = "Input the domain hosted zone id"
   type        = string
-  senstive    = true
+  sensitive   = true
 }
 
 variable "input_cert_arn" {
   description = "Input the generated certificated in ACM"
   type        = string
-  senstive    = true
-}
-
-# VPC, Subnets, and Security Groups
-resource "aws_vpc" "mainvpc" {
-  cidr_block = "10.0.0.0/16"
-}
-
-resource "aws_subnet" "subnet_a" {
-  vpc_id                  = aws_vpc.mainvpc.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "eu-south-2a"  # First AZ
-  map_public_ip_on_launch = true
-}
-
-resource "aws_subnet" "subnet_b" {
-  vpc_id                  = aws_vpc.mainvpc.id
-  cidr_block              = "10.0.2.0/24"
-  availability_zone       = "eu-south-2b"  # Second AZ
-  map_public_ip_on_launch = true
-}
-
-# Create an Internet Gateway
-resource "aws_internet_gateway" "maingateway" {
-  vpc_id = aws_vpc.mainvpc.id
-}
-
-# Create a Route Table to associate it with the Subnets
-resource "aws_route_table" "mainroute" {
-  vpc_id = aws_vpc.mainvpc.id
-}
-
-# Add the route for internet access
-resource "aws_route" "internet_access" {
-  route_table_id         = aws_route_table.mainroute.id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id            = aws_internet_gateway.maingateway.id
-}
-
-# Associate the Route Table with Subnet A and Subnet B
-resource "aws_route_table_association" "subnet_a" {
-  subnet_id      = aws_subnet.subnet_a.id
-  route_table_id = aws_route_table.mainroute.id
-}
-
-resource "aws_route_table_association" "subnet_b" {
-  subnet_id      = aws_subnet.subnet_b.id
-  route_table_id = aws_route_table.mainroute.id
+  sensitive   = true
 }
 
 
-resource "aws_security_group" "allow_http_https" {
-  vpc_id = aws_vpc.mainvpc.id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+# Network/VPC Module
+module "network" {
+  source              = "./modules/network"
+  vpc_cidr_block_net  = "10.0.0.0/16"
+  subnet_a_cidr_block = "10.0.1.0/24"
+  subnet_a_az         = "eu-south-2a"
+  subnet_b_cidr_block = "10.0.2.0/24"
+  subnet_b_az         = "eu-south-2b"
 }
+
 
 # ALB Module with HTTPS
 module "elb" {
   source             = "./modules/elb"
-  vpc_id             = aws_vpc.mainvpc.id
-  subnet_ids       = [aws_subnet.subnet_a.id, aws_subnet.subnet_b.id]  # Passing both subnets
-  security_group_ids = [aws_security_group.allow_http_https.id]
+  vpc_id             = module.network.mainvpc_id
+  subnet_ids         = [module.network.subnet_a_id, module.network.subnet_b_id] # Passing both subnets
+  security_group_ids = [module.network.sec_group]
   target_group_name  = "ec2-nginx-target-group"
   cert_arn           = var.input_cert_arn
 }
@@ -119,18 +58,18 @@ module "elb" {
 module "ec2_instance_1" {
   source           = "./modules/ec2"
   instance_name    = "ec2-instance1"
-  vpc_id           = aws_vpc.mainvpc.id
-  subnet_id        = aws_subnet.subnet_a.id #subnet a
-  security_group   = aws_security_group.allow_http_https.id
+  vpc_id           = module.network.mainvpc_id
+  subnet_id        = module.network.subnet_a_id #subnet a
+  security_group   = module.network.sec_group
   target_group_arn = module.elb.target_group_arn
 }
 
 module "ec2_instance_2" {
   source           = "./modules/ec2"
   instance_name    = "ec2-instance2"
-  vpc_id           = aws_vpc.mainvpc.id
-  subnet_id        = aws_subnet.subnet_b.id #subnet b
-  security_group   = aws_security_group.allow_http_https.id
+  vpc_id           = module.network.mainvpc_id
+  subnet_id        = module.network.subnet_b_id #subnet b
+  security_group   = module.network.sec_group
   target_group_arn = module.elb.target_group_arn
 }
 

@@ -24,7 +24,7 @@ Basic usage of EC2 instances and ELB.
 
 ### Sensitive variables 
 
-I use a "sensitive.tfvars" in the .terraform folder that is not uploaded to the repo with the tfstate. Then use it to plan and apply ont terraform to hide sensitive data. 
+I use a "sensitive.tfvars" in the .terraform folder that is not uploaded to the repo with the tfstate. Then use it to plan and apply on terraform to hide sensitive data. 
 
 - `hosted_zone_id` - The hosted_zone_id of the domain. Can get it with aws cli: `aws route53 list-hosted-zones`
 - `cert_arn` The arn of the certificate. `aws acm list-certificates` (in the us-east-1 region).
