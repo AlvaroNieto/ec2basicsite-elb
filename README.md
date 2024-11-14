@@ -31,8 +31,8 @@ I use a "sensitive.tfvars" in the .terraform folder that is not uploaded to the 
 
 ## Basic nginx deployment
 
-`sudo yum update -y`
-`sudo yum install nginx -y`
-`sudo systemctl start nginx`
-`sudo systemctl enable nginx`
-`echo '<html><body><h1>Hello from ${var.instance_name}!</h1><p>Refresh this page! It's an aplication load balancer.</p></body></html>' | sudo tee /usr/share/nginx/html/index.html > /dev/null`
+- `sudo yum update -y`
+- `sudo yum install nginx -y`
+- `sudo systemctl start nginx`
+- `sudo systemctl enable nginx`
+- `echo '<html><body><h1>Hello from ${var.instance_name}!</h1><p>Refresh this page! It's an aplication load balancer.</p></body></html>' | sudo tee /usr/share/nginx/html/index.html > /dev/null`

@@ -14,7 +14,7 @@ resource "aws_instance" "nginx" {
         sudo yum install nginx -y
         sudo systemctl start nginx
         sudo systemctl enable nginx
-        echo '<html><body><h1>Hello from ${var.instance_name}!</h1></body></html>' | sudo tee /usr/share/nginx/html/index.html > /dev/null
+        echo '<html><body><h1>Hello from ${var.instance_name}!</h1><p>Refresh this page! It's an aplication load balancer.</p></body></html>' | sudo tee /usr/share/nginx/html/index.html > /dev/null
     EOF
 }
 
